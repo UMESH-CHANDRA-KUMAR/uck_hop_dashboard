@@ -474,7 +474,6 @@ canvas{
 
 .dept-chart-container{
     height:260px;
-    position:relative;
 }
 
 .dept-chart-caption{
@@ -482,13 +481,6 @@ canvas{
     color:#666;
     font-size:12px;
     margin-top:8px;
-}
-
-.dept-debug{
-    text-align:center;
-    color:#d93025;
-    font-size:11px;
-    margin-top:4px;
 }
 
 .cal-grid{
@@ -996,7 +988,6 @@ canvas{
                 <canvas id="deptChart"></canvas>
             </div>
             <div class="dept-chart-caption" id="deptChartCaption">Targets vs Completed by Department</div>
-            <div class="dept-debug" id="deptDebug"></div>
         </div>
 
     </div>
@@ -1047,7 +1038,6 @@ let criticalChartPcp = null;
 let deptChartObj = null;
 let deptChartOpen = false;
 let rawTaskRows = [];
-let tasksLoaded = false;
 
 const DATA_FILE_PATH = 'Data-file.xlsx';
 const PDF_ROOT = 'Communications';
@@ -1525,31 +1515,18 @@ async function loadTasks(){
             return;
         }
 
-        const allRows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:true});
-
-        if(allRows.length < 2){
-            return;
-        }
-
-        const dataRows = allRows.slice(1);
+        const rows = XLSX.utils.sheet_to_json(sheet);
 
         taskMap = {};
         rawTaskRows = [];
 
-        dataRows.forEach(row => {
+        rows.forEach(r => {
 
-            if(!row || row.length === 0){
-                return;
-            }
-
-            const rawDate = row[0];
-            const activity = row[1];
-            const statusRaw = (row[2] !== undefined && row[2] !== null) ? row[2] : '';
-            const department = (row[3] !== undefined && row[3] !== null) ? row[3].toString().trim() : '';
-
-            if(rawDate === undefined || rawDate === null || rawDate === ''){
-                return;
-            }
+            const keys = Object.keys(r);
+            let rawDate = r[keys[0]];
+            let activity = r[keys[1]];
+            let statusRaw = keys[2] ? r[keys[2]] : '';
+            let department = keys[3] ? (r[keys[3]] || '').toString().trim() : '';
 
             const dateObj = parseAnyDate(rawDate);
 
@@ -1579,8 +1556,6 @@ async function loadTasks(){
                 statusClass: statusClass
             });
         });
-
-        tasksLoaded = true;
 
         renderCalendar();
 
@@ -1622,14 +1597,9 @@ function toggleDeptChart(){
     const btn = document.getElementById('deptToggleBtn');
 
     if(deptChartOpen){
-
         wrap.classList.add('open');
         btn.classList.add('active');
-
-        setTimeout(() => {
-            renderDeptChart();
-        }, 100);
-
+        renderDeptChart();
     } else {
         wrap.classList.remove('open');
         btn.classList.remove('active');
@@ -1637,21 +1607,6 @@ function toggleDeptChart(){
 }
 
 function renderDeptChart(){
-
-    const canvasEl = document.getElementById('deptChart');
-    const captionEl = document.getElementById('deptChartCaption');
-    const debugEl = document.getElementById('deptDebug');
-
-    if(!canvasEl){
-        return;
-    }
-
-    debugEl.textContent = '';
-
-    if(!tasksLoaded){
-        captionEl.textContent = 'Loading task data...';
-        return;
-    }
 
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -1676,25 +1631,21 @@ function renderDeptChart(){
 
     const departments = Object.keys(deptStats);
 
-    captionEl.textContent =
+    document.getElementById('deptChartCaption').textContent =
         departments.length > 0
             ? 'Targets vs Completed by Department - ' + monthNames[calMonth] + ' ' + calYear
             : 'No tasks with department data found for ' + monthNames[calMonth] + ' ' + calYear;
 
     if(deptChartObj){
         deptChartObj.destroy();
-        deptChartObj = null;
     }
 
     if(departments.length === 0){
-        debugEl.textContent = 'Total task rows loaded: ' + rawTaskRows.length + '. None matched ' + monthNames[calMonth] + ' ' + calYear + '.';
         return;
     }
 
-    const ctx = canvasEl.getContext('2d');
-
     deptChartObj = new Chart(
-        ctx,
+        document.getElementById('deptChart'),
         {
             type: 'bar',
 

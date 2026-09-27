@@ -418,14 +418,6 @@ canvas{
     margin-bottom:10px;
     font-weight:bold;
     color:#005a9c;
-    flex-wrap:wrap;
-    gap:8px;
-}
-
-.cal-header-nav-group{
-    display:flex;
-    align-items:center;
-    gap:8px;
 }
 
 .cal-nav{
@@ -440,55 +432,6 @@ canvas{
 
 .cal-nav:hover{
     background:#005a9c;
-}
-
-.dept-btn{
-    background:#8e44ad;
-    color:white;
-    border:none;
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    font-size:12px;
-    font-weight:600;
-}
-
-.dept-btn:hover{
-    background:#6c3483;
-}
-
-.dept-btn.active{
-    background:#6c3483;
-}
-
-.dept-chart-wrap{
-    display:none;
-    margin-top:15px;
-    padding-top:15px;
-    border-top:1px solid #eee;
-}
-
-.dept-chart-wrap.open{
-    display:block;
-}
-
-.dept-chart-container{
-    height:260px;
-    position:relative;
-}
-
-.dept-chart-caption{
-    text-align:center;
-    color:#666;
-    font-size:12px;
-    margin-top:8px;
-}
-
-.dept-debug{
-    text-align:center;
-    color:#d93025;
-    font-size:11px;
-    margin-top:4px;
 }
 
 .cal-grid{
@@ -975,12 +918,9 @@ canvas{
     <div class="split-col">
         <h2>Task Calendar</h2>
         <div id="calendarHeader" class="cal-header">
-            <div class="cal-header-nav-group">
-                <button onclick="changeMonth(-1)" class="cal-nav">&#8249;</button>
-                <span id="calMonthLabel"></span>
-                <button onclick="changeMonth(1)" class="cal-nav">&#8250;</button>
-            </div>
-            <button class="dept-btn" id="deptToggleBtn" onclick="toggleDeptChart()">Dept Targets</button>
+            <button onclick="changeMonth(-1)" class="cal-nav">&#8249;</button>
+            <span id="calMonthLabel"></span>
+            <button onclick="changeMonth(1)" class="cal-nav">&#8250;</button>
         </div>
         <div id="calendarGrid" class="cal-grid"></div>
         <div class="cal-legend">
@@ -990,15 +930,6 @@ canvas{
             <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#d93025"></span> Delayed</div>
         </div>
         <div id="calTooltip" class="cal-tooltip"></div>
-
-        <div class="dept-chart-wrap" id="deptChartWrap">
-            <div class="dept-chart-container">
-                <canvas id="deptChart"></canvas>
-            </div>
-            <div class="dept-chart-caption" id="deptChartCaption">Targets vs Completed by Department</div>
-            <div class="dept-debug" id="deptDebug"></div>
-        </div>
-
     </div>
 
 </div>
@@ -1044,10 +975,6 @@ let capexChartObj = null;
 let criticalChartAcc = null;
 let criticalChartBoiler = null;
 let criticalChartPcp = null;
-let deptChartObj = null;
-let deptChartOpen = false;
-let rawTaskRows = [];
-let tasksLoaded = false;
 
 const DATA_FILE_PATH = 'Data-file.xlsx';
 const PDF_ROOT = 'Communications';
@@ -1525,47 +1452,22 @@ async function loadTasks(){
             return;
         }
 
-        const allRows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:true});
-
-        if(allRows.length < 2){
-            return;
-        }
-
-        const dataRows = allRows.slice(1);
+        const rows = XLSX.utils.sheet_to_json(sheet);
 
         taskMap = {};
-        rawTaskRows = [];
 
-        dataRows.forEach(row => {
+        rows.forEach(r => {
 
-            if(!row || row.length === 0){
-                return;
-            }
-
-            const rawDate = row[0];
-            const activity = row[1];
-            const statusRaw = (row[2] !== undefined && row[2] !== null) ? row[2] : '';
-            const department = (row[3] !== undefined && row[3] !== null) ? row[3].toString().trim() : '';
-
-            if(rawDate === undefined || rawDate === null || rawDate === ''){
-                return;
-            }
+            const keys = Object.keys(r);
+            let rawDate = r[keys[0]];
+            let activity = r[keys[1]];
+            let statusRaw = keys[2] ? r[keys[2]] : '';
 
             const dateObj = parseAnyDate(rawDate);
 
             if(isNaN(dateObj)){
                 return;
             }
-
-            const statusClass = classifyStatus(statusRaw);
-
-            rawTaskRows.push({
-                date: dateObj,
-                activity: activity,
-                status: statusRaw || '',
-                statusClass: statusClass,
-                department: department || 'Unassigned'
-            });
 
             const key = dateObj.getFullYear() + '-' + (dateObj.getMonth()+1) + '-' + dateObj.getDate();
 
@@ -1576,17 +1478,11 @@ async function loadTasks(){
             taskMap[key].push({
                 activity: activity,
                 status: statusRaw || '',
-                statusClass: statusClass
+                statusClass: classifyStatus(statusRaw)
             });
         });
 
-        tasksLoaded = true;
-
         renderCalendar();
-
-        if(deptChartOpen){
-            renderDeptChart();
-        }
 
     } catch(err){
         console.error(err);
@@ -1608,134 +1504,6 @@ function changeMonth(delta){
     }
 
     renderCalendar();
-
-    if(deptChartOpen){
-        renderDeptChart();
-    }
-}
-
-function toggleDeptChart(){
-
-    deptChartOpen = !deptChartOpen;
-
-    const wrap = document.getElementById('deptChartWrap');
-    const btn = document.getElementById('deptToggleBtn');
-
-    if(deptChartOpen){
-
-        wrap.classList.add('open');
-        btn.classList.add('active');
-
-        setTimeout(() => {
-            renderDeptChart();
-        }, 100);
-
-    } else {
-        wrap.classList.remove('open');
-        btn.classList.remove('active');
-    }
-}
-
-function renderDeptChart(){
-
-    const canvasEl = document.getElementById('deptChart');
-    const captionEl = document.getElementById('deptChartCaption');
-    const debugEl = document.getElementById('deptDebug');
-
-    if(!canvasEl){
-        return;
-    }
-
-    debugEl.textContent = '';
-
-    if(!tasksLoaded){
-        captionEl.textContent = 'Loading task data...';
-        return;
-    }
-
-    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-    const monthTasks = rawTaskRows.filter(t =>
-        t.date.getFullYear() === calYear && t.date.getMonth() === calMonth
-    );
-
-    const deptStats = {};
-
-    monthTasks.forEach(t => {
-
-        if(!deptStats[t.department]){
-            deptStats[t.department] = { total: 0, completed: 0 };
-        }
-
-        deptStats[t.department].total += 1;
-
-        if(t.statusClass === 'completed'){
-            deptStats[t.department].completed += 1;
-        }
-    });
-
-    const departments = Object.keys(deptStats);
-
-    captionEl.textContent =
-        departments.length > 0
-            ? 'Targets vs Completed by Department - ' + monthNames[calMonth] + ' ' + calYear
-            : 'No tasks with department data found for ' + monthNames[calMonth] + ' ' + calYear;
-
-    if(deptChartObj){
-        deptChartObj.destroy();
-        deptChartObj = null;
-    }
-
-    if(departments.length === 0){
-        debugEl.textContent = 'Total task rows loaded: ' + rawTaskRows.length + '. None matched ' + monthNames[calMonth] + ' ' + calYear + '.';
-        return;
-    }
-
-    const ctx = canvasEl.getContext('2d');
-
-    deptChartObj = new Chart(
-        ctx,
-        {
-            type: 'bar',
-
-            data:{
-                labels: departments,
-                datasets:[
-                    {
-                        label: 'Targets',
-                        data: departments.map(d => deptStats[d].total),
-                        backgroundColor: '#0078D4',
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Completed',
-                        data: departments.map(d => deptStats[d].completed),
-                        backgroundColor: '#28a745',
-                        borderRadius: 4
-                    }
-                ]
-            },
-
-            options:{
-                responsive:true,
-                maintainAspectRatio:false,
-
-                plugins:{
-                    legend:{
-                        display:true,
-                        position:'top'
-                    }
-                },
-
-                scales:{
-                    y:{
-                        beginAtZero:true,
-                        ticks:{ stepSize:1 }
-                    }
-                }
-            }
-        }
-    );
 }
 
 function getDayOverallStatus(tasks, cellDate, today){

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PVUNL Dashboard - Login</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2/lib/msal-browser.min.js"></script>
+
+<style>
+
+body{
+    font-family:Segoe UI,Arial,sans-serif;
+    background:linear-gradient(135deg,#005a9c,#0078D4);
+    margin:0;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.login-card{
+    background:white;
+    width:380px;
+    padding:35px 30px;
+    border-radius:16px;
+    box-shadow:0 8px 30px rgba(0,0,0,.25);
+    text-align:center;
+}
+
+.login-card h1{
+    color:#005a9c;
+    font-size:22px;
+    margin-bottom:5px;
+}
+
+.login-card .sub{
+    color:#888;
+    font-size:13px;
+    margin-bottom:20px;
+}
+
+.domain-badge{
+    display:inline-block;
+    background:#e8f0fe;
+    color:#0078D4;
+    font-size:11px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:12px;
+    margin-bottom:25px;
+}
+
+.ms-login-btn{
+    width:100%;
+    background:#2F2F2F;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+}
+
+.ms-login-btn:hover{
+    background:#1a1a1a;
+}
+
+.ms-login-btn:disabled{
+    background:#999;
+    cursor:not-allowed;
+}
+
+.ms-login-btn svg{
+    width:18px;
+    height:18px;
+}
+
+.role-select-box{
+    display:none;
+    text-align:left;
+    margin-top:20px;
+}
+
+.role-select-box label{
+    display:block;
+    color:#333;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:6px;
+}
+
+select{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:14px;
+    box-sizing:border-box;
+}
+
+.continue-btn{
+    width:100%;
+    background:#0078D4;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    font-size:15px;
+    font-weight:bold;
+    margin-top:16px;
+    cursor:pointer;
+}
+
+.continue-btn:hover{
+    background:#005a9c;
+}
+
+.error-msg{
+    color:#d93025;
+    font-size:13px;
+    margin-top:16px;
+    display:none;
+    background:#fdecea;
+    padding:10px;
+    border-radius:8px;
+    text-align:left;
+}
+
+.note{
+    font-size:11px;
+    color:#999;
+    margin-top:20px;
+    line-height:1.4;
+}
+
+.loading-msg{
+    display:none;
+    color:#666;
+    font-size:13px;
+    margin-top:16px;
+}
+
+.script-status{
+    font-size:11px;
+    color:#bbb;
+    margin-bottom:15px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="login-card">
+    <h1>PVUNL Project Dashboard</h1>
+    <div class="sub">Daily Update Portal - Sign In</div>
+    <div class="domain-badge">Restricted to @ntpc.co.in accounts</div>
+
+    <div class="script-status" id="scriptStatus">Loading Microsoft sign-in library...</div>
+
+    <button class="ms-login-btn" id="msLoginBtn" onclick="signIn()" disabled>
+        <svg viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+        Sign in with Microsoft
+    </button>
+
+    <div class="loading-msg" id="loadingMsg">Signing you in...</div>
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="role-select-box" id="roleBox">
+        <label for="userRole">Category You Update</label>
+        <select id="userRole">
+            <option value="ACC">ACC</option>
+            <option value="Boiler">Boiler</option>
+            <option value="PCP Joint">PCP Joint</option>
+        </select>
+        <button class="continue-btn" onclick="proceedToForm()">Continue to Update Form</button>
+    </div>
+
+    <div class="note">
+        Only NTPC Microsoft 365 accounts (@ntpc.co.in) can submit daily updates. Contact the dashboard administrator if you believe you should have access.
+    </div>
+</div>
+
+<script>
+
+// STEP 1: Replace with your NTPC Azure AD App Registration values (IT will provide these)
+const MSAL_CONFIG = {
+    auth: {
+        clientId: 'YOUR_AZURE_APP_CLIENT_ID_HERE',
+        authority: 'https://login.microsoftonline.com/YOUR_NTPC_TENANT_ID_HERE',
+        redirectUri: window.location.origin + window.location.pathname
+    },
+    cache: {
+        cacheLocation: 'sessionStorage'
+    }
+};
+
+// Domain restriction - only emails ending in this domain are allowed
+const ALLOWED_DOMAIN = 'ntpc.co.in';
+
+let msalInstance = null;
+let verifiedEmail = null;
+let verifiedName = null;
+
+function isAllowedDomain(email){
+    if(!email || !email.includes('@')){
+        return false;
+    }
+    const domain = email.split('@')[1].toLowerCase().trim();
+    return domain === ALLOWED_DOMAIN;
+}
+
+function showError(msg){
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('errorMsg').style.display = 'block';
+    document.getElementById('roleBox').style.display = 'none';
+}
+
+function initMsal(){
+
+    if(typeof msal === 'undefined'){
+        document.getElementById('scriptStatus').textContent =
+            'Could not load Microsoft sign-in library. Check your internet connection and refresh this page.';
+        document.getElementById('scriptStatus').style.color = '#d93025';
+        return;
+    }
+
+    msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+    document.getElementById('scriptStatus').style.display = 'none';
+    document.getElementById('msLoginBtn').disabled = false;
+}
+
+async function signIn(){
+
+    if(!msalInstance){
+        showError('Sign-in library is not ready yet. Please wait a moment and try again.');
+        return;
+    }
+
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('loadingMsg').style.display = 'block';
+
+    try{
+
+        const loginRequest = {
+            scopes: ['User.Read'],
+            prompt: 'select_account'
+        };
+
+        const response = await msalInstance.loginPopup(loginRequest);
+
+        const email = (response.account.username || '').toLowerCase().trim();
+        const name = response.account.name || email;
+
+        document.getElementById('loadingMsg').style.display = 'none';
+
+        if(!isAllowedDomain(email)){
+            showError('Access denied. "' + email + '" is not an @' + ALLOWED_DOMAIN + ' account. Only NTPC email addresses can submit updates.');
+            msalInstance.logoutPopup({ account: response.account });
+            return;
+        }
+
+        verifiedEmail = email;
+        verifiedName = name;
+
+        document.getElementById('roleBox').style.display = 'block';
+        document.getElementById('msLoginBtn').style.display = 'none';
+
+    } catch(err){
+        console.error(err);
+        document.getElementById('loadingMsg').style.display = 'none';
+        showError('Sign-in failed or was cancelled. Please try again. (' + (err.errorCode || err.message || 'unknown error') + ')');
+    }
+}
+
+function proceedToForm(){
+
+    if(!verifiedEmail){
+        return;
+    }
+
+    const role = document.getElementById('userRole').value;
+
+    sessionStorage.setItem('pvunl_user_email', verifiedEmail);
+    sessionStorage.setItem('pvunl_user_name', verifiedName);
+    sessionStorage.setItem('pvunl_user_role', role);
+
+    window.location.href = 'daily-update.html';
+}
+
+window.addEventListener('load', initMsal);
+
+</script>
+
+</body>
+</html>

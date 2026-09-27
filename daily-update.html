@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PVUNL Dashboard - Daily Update Entry</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+
+body{
+    font-family:Segoe UI,Arial,sans-serif;
+    background:#f4f7fb;
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+
+.form-card{
+    background:white;
+    width:480px;
+    max-width:100%;
+    padding:35px 30px;
+    border-radius:16px;
+    box-shadow:0 8px 30px rgba(0,0,0,.15);
+}
+
+.form-card h1{
+    color:#005a9c;
+    text-align:center;
+    font-size:20px;
+    margin-bottom:2px;
+}
+
+.user-badge{
+    text-align:center;
+    color:#666;
+    font-size:13px;
+    margin-bottom:20px;
+}
+
+.user-badge b{
+    color:#0078D4;
+}
+
+.user-badge .email{
+    color:#999;
+    font-size:11px;
+    display:block;
+}
+
+.connect-box{
+    background:#f4f7fb;
+    border:1px dashed #0078D4;
+    border-radius:10px;
+    padding:14px;
+    text-align:center;
+    margin-bottom:20px;
+    font-size:12px;
+    color:#666;
+}
+
+.connect-btn{
+    background:#0078D4;
+    color:white;
+    border:none;
+    padding:8px 18px;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:8px;
+}
+
+.connect-btn:hover{
+    background:#005a9c;
+}
+
+.connect-box.connected{
+    border:1px solid #28a745;
+    color:#28a745;
+}
+
+label{
+    display:block;
+    color:#333;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:6px;
+    margin-top:16px;
+}
+
+select, textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:14px;
+    box-sizing:border-box;
+    font-family:inherit;
+}
+
+textarea{
+    resize:vertical;
+    min-height:90px;
+}
+
+select:focus, textarea:focus{
+    outline:none;
+    border-color:#0078D4;
+}
+
+.submit-btn{
+    width:100%;
+    background:#28a745;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    font-size:15px;
+    font-weight:bold;
+    margin-top:22px;
+    cursor:pointer;
+}
+
+.submit-btn:hover{
+    background:#1e7e34;
+}
+
+.submit-btn:disabled{
+    background:#ccc;
+    cursor:not-allowed;
+}
+
+.status-msg{
+    text-align:center;
+    font-size:13px;
+    margin-top:14px;
+    display:none;
+}
+
+.status-msg.success{
+    color:#28a745;
+    display:block;
+}
+
+.status-msg.error{
+    color:#d93025;
+    display:block;
+}
+
+.logout-link{
+    display:block;
+    text-align:center;
+    margin-top:18px;
+    font-size:12px;
+    color:#0078D4;
+    cursor:pointer;
+    text-decoration:underline;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="form-card">
+
+    <h1>Daily Update Entry</h1>
+    <div class="user-badge">
+        Logged in as <b id="displayName"></b> (<span id="displayRole"></span>)
+        <span class="email" id="displayEmail"></span>
+    </div>
+
+    <div class="connect-box" id="connectBox">
+        Connect to the shared Daily-updates.xlsx file (one-time per browser).
+        <br>
+        <button class="connect-btn" onclick="connectFile()">Connect File</button>
+    </div>
+
+    <form id="updateForm">
+
+        <label for="category">Category</label>
+        <select id="category"></select>
+
+        <label for="updateText">Today's Update</label>
+        <textarea id="updateText" placeholder="Describe today's major progress or activity..."></textarea>
+
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>Submit Update</button>
+
+    </form>
+
+    <div class="status-msg" id="statusMsg"></div>
+
+    <div class="logout-link" onclick="logout()">Not you? Sign out</div>
+
+</div>
+
+<script>
+
+const UPDATES_FILE_NAME = 'Daily-updates.xlsx';
+
+// Must match the domain restriction in login.html
+const ALLOWED_DOMAIN = 'ntpc.co.in';
+
+function isAllowedDomain(email){
+    if(!email || !email.includes('@')){
+        return false;
+    }
+    const domain = email.split('@')[1].toLowerCase().trim();
+    return domain === ALLOWED_DOMAIN;
+}
+
+let fileHandle = null;
+
+const DB_NAME = 'pvunlUpdateDB';
+const STORE_NAME = 'handles';
+const KEY = 'updatesFileHandle';
+
+function openDB(){
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => {
+            req.result.createObjectStore(STORE_NAME);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function saveHandle(handle){
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(handle, KEY);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function loadSavedHandle(){
+    const db = await openDB();
+    return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(KEY);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+    });
+}
+
+function checkLogin(){
+
+    const email = (sessionStorage.getItem('pvunl_user_email') || '').toLowerCase().trim();
+    const name = sessionStorage.getItem('pvunl_user_name');
+    const role = sessionStorage.getItem('pvunl_user_role');
+
+    if(!email || !name || !isAllowedDomain(email)){
+        sessionStorage.removeItem('pvunl_user_email');
+        sessionStorage.removeItem('pvunl_user_name');
+        sessionStorage.removeItem('pvunl_user_role');
+        window.location.href = 'login.html';
+        return;
+    }
+
+    document.getElementById('displayName').textContent = name;
+    document.getElementById('displayRole').textContent = role;
+    document.getElementById('displayEmail').textContent = email;
+
+    const categorySelect = document.getElementById('category');
+    ['ACC','Boiler','PCP Joint'].forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        if(cat === role){
+            opt.selected = true;
+        }
+        categorySelect.appendChild(opt);
+    });
+}
+
+function logout(){
+    sessionStorage.removeItem('pvunl_user_email');
+    sessionStorage.removeItem('pvunl_user_name');
+    sessionStorage.removeItem('pvunl_user_role');
+    window.location.href = 'login.html';
+}
+
+async function connectFile(){
+
+    if(!window.showOpenFilePicker){
+        showStatus('Your browser does not support this feature. Please use Chrome or Edge.', 'error');
+        return;
+    }
+
+    try{
+
+        const [handle] = await window.showOpenFilePicker({
+            types:[{
+                description:'Excel files',
+                accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx']}
+            }],
+            excludeAcceptAllOption:false,
+            multiple:false
+        });
+
+        const permission = await handle.requestPermission({mode:'readwrite'});
+
+        if(permission !== 'granted'){
+            showStatus('Write permission was not granted.', 'error');
+            return;
+        }
+
+        fileHandle = handle;
+        await saveHandle(handle);
+
+        markConnected();
+
+    } catch(err){
+        console.log('File connection cancelled or failed', err);
+    }
+}
+
+function markConnected(){
+    const box = document.getElementById('connectBox');
+    box.classList.add('connected');
+    box.innerHTML = '&#10003; Connected to ' + UPDATES_FILE_NAME;
+    document.getElementById('submitBtn').disabled = false;
+}
+
+async function tryAutoReconnect(){
+
+    if(!window.indexedDB || !window.showOpenFilePicker){
+        return;
+    }
+
+    const savedHandle = await loadSavedHandle();
+
+    if(!savedHandle){
+        return;
+    }
+
+    try{
+
+        const permission = await savedHandle.queryPermission({mode:'readwrite'});
+
+        if(permission === 'granted'){
+            fileHandle = savedHandle;
+            markConnected();
+        } else {
+
+            const box = document.getElementById('connectBox');
+            box.innerHTML = 'Previously connected. Click to re-confirm access.<br><button class="connect-btn" onclick="reconfirmAccess()">Re-confirm Access</button>';
+            fileHandle = savedHandle;
+        }
+
+    } catch(err){
+        console.log('Auto-reconnect failed', err);
+    }
+}
+
+async function reconfirmAccess(){
+
+    if(!fileHandle){
+        return;
+    }
+
+    const permission = await fileHandle.requestPermission({mode:'readwrite'});
+
+    if(permission === 'granted'){
+        markConnected();
+    } else {
+        showStatus('Write permission was not granted.', 'error');
+    }
+}
+
+function showStatus(msg, type){
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status-msg ' + type;
+
+    if(type === 'success'){
+        setTimeout(() => {
+            el.style.display = 'none';
+        }, 4000);
+    }
+}
+
+document.getElementById('updateForm').addEventListener('submit', async function(e){
+
+    e.preventDefault();
+
+    if(!fileHandle){
+        showStatus('Please connect the file first.', 'error');
+        return;
+    }
+
+    const category = document.getElementById('category').value;
+    const updateText = document.getElementById('updateText').value.trim();
+    const userName = sessionStorage.getItem('pvunl_user_name');
+    const userEmail = sessionStorage.getItem('pvunl_user_email');
+
+    if(!updateText){
+        showStatus('Please enter an update before submitting.', 'error');
+        return;
+    }
+
+    try{
+
+        const permission = await fileHandle.queryPermission({mode:'readwrite'});
+
+        if(permission !== 'granted'){
+            const req = await fileHandle.requestPermission({mode:'readwrite'});
+            if(req !== 'granted'){
+                showStatus('Write permission denied.', 'error');
+                return;
+            }
+        }
+
+        const file = await fileHandle.getFile();
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, {type:'array'});
+
+        let sheet = workbook.Sheets['Updates'];
+
+        const today = new Date();
+        const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+        const newRow = [dateStr, category, updateText + ' (submitted by ' + userName + ', ' + userEmail + ')'];
+
+        if(!sheet){
+
+            const wsData = [['Date','Category','Update'], newRow];
+            sheet = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(workbook, sheet, 'Updates');
+
+        } else {
+
+            const existingRows = XLSX.utils.sheet_to_json(sheet, {header:1});
+            existingRows.push(newRow);
+
+            const newSheet = XLSX.utils.aoa_to_sheet(existingRows);
+            workbook.Sheets['Updates'] = newSheet;
+        }
+
+        const wbout = XLSX.write(workbook, {bookType:'xlsx', type:'array'});
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(wbout);
+        await writable.close();
+
+        showStatus('Update submitted successfully! It will appear on the dashboard shortly.', 'success');
+        document.getElementById('updateText').value = '';
+
+    } catch(err){
+        console.error(err);
+        showStatus('Failed to save update: ' + err.message, 'error');
+    }
+});
+
+checkLogin();
+tryAutoReconnect();
+
+</script>
+
+</body>
+</html>

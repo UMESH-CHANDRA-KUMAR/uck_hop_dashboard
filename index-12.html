@@ -300,23 +300,6 @@ canvas{
     font-weight:bold;
 }
 
-.capex-chart-wrap{
-    margin-top:18px;
-    padding-top:14px;
-    border-top:1px solid #eee;
-}
-
-.capex-chart-wrap h4{
-    color:#005a9c;
-    font-size:13px;
-    margin:0 0 10px 0;
-    text-align:center;
-}
-
-#capexChart{
-    max-height:110px !important;
-}
-
 .target-list{
     list-style:none;
     padding:0;
@@ -418,14 +401,6 @@ canvas{
     margin-bottom:10px;
     font-weight:bold;
     color:#005a9c;
-    flex-wrap:wrap;
-    gap:8px;
-}
-
-.cal-header-nav-group{
-    display:flex;
-    align-items:center;
-    gap:8px;
 }
 
 .cal-nav{
@@ -440,55 +415,6 @@ canvas{
 
 .cal-nav:hover{
     background:#005a9c;
-}
-
-.dept-btn{
-    background:#8e44ad;
-    color:white;
-    border:none;
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    font-size:12px;
-    font-weight:600;
-}
-
-.dept-btn:hover{
-    background:#6c3483;
-}
-
-.dept-btn.active{
-    background:#6c3483;
-}
-
-.dept-chart-wrap{
-    display:none;
-    margin-top:15px;
-    padding-top:15px;
-    border-top:1px solid #eee;
-}
-
-.dept-chart-wrap.open{
-    display:block;
-}
-
-.dept-chart-container{
-    height:260px;
-    position:relative;
-}
-
-.dept-chart-caption{
-    text-align:center;
-    color:#666;
-    font-size:12px;
-    margin-top:8px;
-}
-
-.dept-debug{
-    text-align:center;
-    color:#d93025;
-    font-size:11px;
-    margin-top:4px;
 }
 
 .cal-grid{
@@ -706,90 +632,6 @@ canvas{
     margin-top:8px;
 }
 
-.critical-areas-wrap{
-    margin-top:25px;
-    display:flex;
-    gap:15px;
-    flex-wrap:wrap;
-    align-items:flex-start;
-}
-
-.collapse-card{
-    background:white;
-    border-radius:16px;
-    box-shadow:0 4px 12px rgba(0,0,0,.12);
-    overflow:hidden;
-    flex:1;
-    min-width:280px;
-    max-width:calc(33.333% - 10px);
-}
-
-.collapse-header{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:6px;
-    padding:14px 16px;
-    cursor:pointer;
-    background:white;
-    border:none;
-    width:100%;
-    text-align:left;
-}
-
-.collapse-header-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    width:100%;
-}
-
-.collapse-header:hover{
-    background:#f4f7fb;
-}
-
-.collapse-header h3{
-    margin:0;
-    color:#005a9c;
-    font-size:14px;
-}
-
-.collapse-chevron{
-    color:#0078D4;
-    font-size:16px;
-    transition:transform 0.2s;
-}
-
-.collapse-header.open .collapse-chevron{
-    transform:rotate(180deg);
-}
-
-.collapse-body{
-    max-height:0;
-    overflow:hidden;
-    transition:max-height 0.3s ease;
-    padding:0 16px;
-}
-
-.collapse-body.open{
-    max-height:340px;
-    padding:0 16px 16px 16px;
-}
-
-.critical-chart-container{
-    height:260px;
-}
-
-.critical-target-badge{
-    display:inline-block;
-    background:#ff6600;
-    color:white;
-    font-size:10px;
-    font-weight:bold;
-    padding:3px 9px;
-    border-radius:12px;
-}
-
 </style>
 </head>
 
@@ -845,12 +687,6 @@ canvas{
                 <div class="fin-value">&#8377;19,207 Cr</div>
             </div>
         </div>
-
-        <div class="capex-chart-wrap">
-            <h4 id="capexChartTitle">Capex Progress</h4>
-            <canvas id="capexChart"></canvas>
-        </div>
-
     </div>
 
 </div>
@@ -866,55 +702,6 @@ canvas{
     </div>
     <div class="carousel-dots" id="carouselDots"></div>
     <div class="carousel-caption" id="carouselCaption">Loading slides...</div>
-</div>
-
-<div class="critical-areas-wrap" id="criticalAreasWrap">
-
-    <div class="collapse-card">
-        <button class="collapse-header" onclick="toggleCollapse(this, 'critical-acc')">
-            <div class="collapse-header-top">
-                <h3>ACC</h3>
-                <span class="collapse-chevron">&#9662;</span>
-            </div>
-            <span class="critical-target-badge" id="target-badge-acc"></span>
-        </button>
-        <div class="collapse-body" id="critical-acc">
-            <div class="critical-chart-container">
-                <canvas id="criticalChartAcc"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="collapse-card">
-        <button class="collapse-header" onclick="toggleCollapse(this, 'critical-boiler')">
-            <div class="collapse-header-top">
-                <h3>Boiler - NDHT Joints</h3>
-                <span class="collapse-chevron">&#9662;</span>
-            </div>
-            <span class="critical-target-badge" id="target-badge-boiler"></span>
-        </button>
-        <div class="collapse-body" id="critical-boiler">
-            <div class="critical-chart-container">
-                <canvas id="criticalChartBoiler"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="collapse-card">
-        <button class="collapse-header" onclick="toggleCollapse(this, 'critical-pcp')">
-            <div class="collapse-header-top">
-                <h3>PCP</h3>
-                <span class="collapse-chevron">&#9662;</span>
-            </div>
-            <span class="critical-target-badge" id="target-badge-pcp"></span>
-        </button>
-        <div class="collapse-body" id="critical-pcp">
-            <div class="critical-chart-container">
-                <canvas id="criticalChartPcp"></canvas>
-            </div>
-        </div>
-    </div>
-
 </div>
 
 <div class="chart-row">
@@ -975,12 +762,9 @@ canvas{
     <div class="split-col">
         <h2>Task Calendar</h2>
         <div id="calendarHeader" class="cal-header">
-            <div class="cal-header-nav-group">
-                <button onclick="changeMonth(-1)" class="cal-nav">&#8249;</button>
-                <span id="calMonthLabel"></span>
-                <button onclick="changeMonth(1)" class="cal-nav">&#8250;</button>
-            </div>
-            <button class="dept-btn" id="deptToggleBtn" onclick="toggleDeptChart()">Dept Targets</button>
+            <button onclick="changeMonth(-1)" class="cal-nav">&#8249;</button>
+            <span id="calMonthLabel"></span>
+            <button onclick="changeMonth(1)" class="cal-nav">&#8250;</button>
         </div>
         <div id="calendarGrid" class="cal-grid"></div>
         <div class="cal-legend">
@@ -990,15 +774,6 @@ canvas{
             <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#d93025"></span> Delayed</div>
         </div>
         <div id="calTooltip" class="cal-tooltip"></div>
-
-        <div class="dept-chart-wrap" id="deptChartWrap">
-            <div class="dept-chart-container">
-                <canvas id="deptChart"></canvas>
-            </div>
-            <div class="dept-chart-caption" id="deptChartCaption">Targets vs Completed by Department</div>
-            <div class="dept-debug" id="deptDebug"></div>
-        </div>
-
     </div>
 
 </div>
@@ -1040,14 +815,6 @@ canvas{
 <script>
 
 let chartObj = null;
-let capexChartObj = null;
-let criticalChartAcc = null;
-let criticalChartBoiler = null;
-let criticalChartPcp = null;
-let deptChartObj = null;
-let deptChartOpen = false;
-let rawTaskRows = [];
-let tasksLoaded = false;
 
 const DATA_FILE_PATH = 'Data-file.xlsx';
 const PDF_ROOT = 'Communications';
@@ -1132,29 +899,6 @@ function parseAnyDate(rawDate){
     }
 
     return new Date(NaN);
-}
-
-function parsePercentValue(pct){
-
-    if(pct === null || pct === undefined || pct === ''){
-        return 0;
-    }
-
-    let num = pct;
-
-    if(typeof num === 'string'){
-        num = parseFloat(num.replace('%',''));
-    }
-
-    if(isNaN(num)){
-        return 0;
-    }
-
-    if(num <= 1){
-        num = num * 100;
-    }
-
-    return num;
 }
 
 async function loadACC(workbook){
@@ -1326,86 +1070,6 @@ function loadMilestones(workbook){
     });
 }
 
-function loadCapex(workbook){
-
-    const sheet = workbook.Sheets['Capex'];
-
-    if(!sheet){
-        return;
-    }
-
-    const rows = XLSX.utils.sheet_to_json(sheet);
-
-    if(rows.length === 0){
-        return;
-    }
-
-    const labels = [];
-    const values = [];
-    const colors = ['#0078D4', '#28a745', '#ff6600', '#8e44ad'];
-
-    rows.forEach(r => {
-
-        const keys = Object.keys(r);
-        const desc = r[keys[0]];
-        const pct = parsePercentValue(r[keys[2]]);
-
-        labels.push(desc);
-        values.push(pct);
-    });
-
-    if(capexChartObj){
-        capexChartObj.destroy();
-    }
-
-    capexChartObj = new Chart(
-        document.getElementById('capexChart'),
-        {
-            type: 'bar',
-
-            data:{
-                labels: labels,
-                datasets:[{
-                    label: 'Progress (%)',
-                    data: values,
-                    backgroundColor: labels.map((l,i) => colors[i % colors.length]),
-                    borderRadius: 4
-                }]
-            },
-
-            options:{
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-
-                plugins:{
-                    legend:{ display:false },
-                    tooltip:{
-                        callbacks:{
-                            label: (ctx) => ctx.parsed.x.toFixed(1) + '%'
-                        }
-                    }
-                },
-
-                scales:{
-                    x:{
-                        beginAtZero:true,
-                        max:100,
-                        ticks:{
-                            callback: (v) => v + '%'
-                        }
-                    },
-                    y:{
-                        ticks:{
-                            font:{ size:11 }
-                        }
-                    }
-                }
-            }
-        }
-    );
-}
-
 async function loadDashboard(){
 
     try{
@@ -1415,7 +1079,6 @@ async function loadDashboard(){
         loadACC(workbook);
         loadManpower(workbook);
         loadMilestones(workbook);
-        loadCapex(workbook);
 
         document.getElementById('fileStatus').textContent =
             'Data last refreshed at ' + new Date().toLocaleTimeString();
@@ -1525,47 +1188,22 @@ async function loadTasks(){
             return;
         }
 
-        const allRows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:true});
-
-        if(allRows.length < 2){
-            return;
-        }
-
-        const dataRows = allRows.slice(1);
+        const rows = XLSX.utils.sheet_to_json(sheet);
 
         taskMap = {};
-        rawTaskRows = [];
 
-        dataRows.forEach(row => {
+        rows.forEach(r => {
 
-            if(!row || row.length === 0){
-                return;
-            }
-
-            const rawDate = row[0];
-            const activity = row[1];
-            const statusRaw = (row[2] !== undefined && row[2] !== null) ? row[2] : '';
-            const department = (row[3] !== undefined && row[3] !== null) ? row[3].toString().trim() : '';
-
-            if(rawDate === undefined || rawDate === null || rawDate === ''){
-                return;
-            }
+            const keys = Object.keys(r);
+            let rawDate = r[keys[0]];
+            let activity = r[keys[1]];
+            let statusRaw = keys[2] ? r[keys[2]] : '';
 
             const dateObj = parseAnyDate(rawDate);
 
             if(isNaN(dateObj)){
                 return;
             }
-
-            const statusClass = classifyStatus(statusRaw);
-
-            rawTaskRows.push({
-                date: dateObj,
-                activity: activity,
-                status: statusRaw || '',
-                statusClass: statusClass,
-                department: department || 'Unassigned'
-            });
 
             const key = dateObj.getFullYear() + '-' + (dateObj.getMonth()+1) + '-' + dateObj.getDate();
 
@@ -1576,17 +1214,11 @@ async function loadTasks(){
             taskMap[key].push({
                 activity: activity,
                 status: statusRaw || '',
-                statusClass: statusClass
+                statusClass: classifyStatus(statusRaw)
             });
         });
 
-        tasksLoaded = true;
-
         renderCalendar();
-
-        if(deptChartOpen){
-            renderDeptChart();
-        }
 
     } catch(err){
         console.error(err);
@@ -1608,134 +1240,6 @@ function changeMonth(delta){
     }
 
     renderCalendar();
-
-    if(deptChartOpen){
-        renderDeptChart();
-    }
-}
-
-function toggleDeptChart(){
-
-    deptChartOpen = !deptChartOpen;
-
-    const wrap = document.getElementById('deptChartWrap');
-    const btn = document.getElementById('deptToggleBtn');
-
-    if(deptChartOpen){
-
-        wrap.classList.add('open');
-        btn.classList.add('active');
-
-        setTimeout(() => {
-            renderDeptChart();
-        }, 100);
-
-    } else {
-        wrap.classList.remove('open');
-        btn.classList.remove('active');
-    }
-}
-
-function renderDeptChart(){
-
-    const canvasEl = document.getElementById('deptChart');
-    const captionEl = document.getElementById('deptChartCaption');
-    const debugEl = document.getElementById('deptDebug');
-
-    if(!canvasEl){
-        return;
-    }
-
-    debugEl.textContent = '';
-
-    if(!tasksLoaded){
-        captionEl.textContent = 'Loading task data...';
-        return;
-    }
-
-    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-    const monthTasks = rawTaskRows.filter(t =>
-        t.date.getFullYear() === calYear && t.date.getMonth() === calMonth
-    );
-
-    const deptStats = {};
-
-    monthTasks.forEach(t => {
-
-        if(!deptStats[t.department]){
-            deptStats[t.department] = { total: 0, completed: 0 };
-        }
-
-        deptStats[t.department].total += 1;
-
-        if(t.statusClass === 'completed'){
-            deptStats[t.department].completed += 1;
-        }
-    });
-
-    const departments = Object.keys(deptStats);
-
-    captionEl.textContent =
-        departments.length > 0
-            ? 'Targets vs Completed by Department - ' + monthNames[calMonth] + ' ' + calYear
-            : 'No tasks with department data found for ' + monthNames[calMonth] + ' ' + calYear;
-
-    if(deptChartObj){
-        deptChartObj.destroy();
-        deptChartObj = null;
-    }
-
-    if(departments.length === 0){
-        debugEl.textContent = 'Total task rows loaded: ' + rawTaskRows.length + '. None matched ' + monthNames[calMonth] + ' ' + calYear + '.';
-        return;
-    }
-
-    const ctx = canvasEl.getContext('2d');
-
-    deptChartObj = new Chart(
-        ctx,
-        {
-            type: 'bar',
-
-            data:{
-                labels: departments,
-                datasets:[
-                    {
-                        label: 'Targets',
-                        data: departments.map(d => deptStats[d].total),
-                        backgroundColor: '#0078D4',
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Completed',
-                        data: departments.map(d => deptStats[d].completed),
-                        backgroundColor: '#28a745',
-                        borderRadius: 4
-                    }
-                ]
-            },
-
-            options:{
-                responsive:true,
-                maintainAspectRatio:false,
-
-                plugins:{
-                    legend:{
-                        display:true,
-                        position:'top'
-                    }
-                },
-
-                scales:{
-                    y:{
-                        beginAtZero:true,
-                        ticks:{ stepSize:1 }
-                    }
-                }
-            }
-        }
-    );
 }
 
 function getDayOverallStatus(tasks, cellDate, today){
@@ -1910,154 +1414,6 @@ async function loadDailyUpdates(){
         ['acc','boiler','pcp'].forEach(id => {
             document.getElementById('text-' + id).textContent = 'Could not load "' + UPDATES_FILE_PATH + '"';
         });
-    }
-}
-
-async function loadCriticalAreas(){
-
-    try{
-
-        const workbook = await loadWorkbook(UPDATES_FILE_PATH);
-        const sheet = workbook.Sheets['Critical areas'];
-
-        if(!sheet){
-            return;
-        }
-
-        const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
-
-        if(rows.length < 2){
-            return;
-        }
-
-        const headerRow = rows[0];
-        const colNames = headerRow.slice(1);
-
-        let targets = [null, null, null];
-        const dailyRows = [];
-
-        for(let i = 1; i < rows.length; i++){
-
-            const row = rows[i];
-            const firstCell = (row[0] || '').toString().trim().toLowerCase();
-
-            if(firstCell === 'target'){
-                targets = [row[1], row[2], row[3]];
-            } else {
-                const dateObj = parseAnyDate(row[0]);
-                if(!isNaN(dateObj)){
-                    dailyRows.push({ date: dateObj, values: [row[1], row[2], row[3]] });
-                }
-            }
-        }
-
-        dailyRows.sort((a,b) => a.date - b.date);
-        const last7 = dailyRows.slice(-7);
-
-        const labels = last7.map(r => (r.date.getDate() + '/' + (r.date.getMonth()+1)));
-
-        renderCriticalChart('criticalChartAcc', labels, last7.map(r => r.values[0] || 0), targets[0], '#0078D4', 'target-badge-acc', colNames[0] || 'ACC');
-        renderCriticalChart('criticalChartBoiler', labels, last7.map(r => r.values[1] || 0), targets[1], '#ff6600', 'target-badge-boiler', colNames[1] || 'Boiler');
-        renderCriticalChart('criticalChartPcp', labels, last7.map(r => r.values[2] || 0), targets[2], '#28a745', 'target-badge-pcp', colNames[2] || 'PCP');
-
-    } catch(err){
-        console.error(err);
-    }
-}
-
-function renderCriticalChart(canvasId, labels, values, target, barColor, badgeId, seriesLabel){
-
-    const badge = document.getElementById(badgeId);
-    if(badge){
-        badge.textContent = 'Target: ' + (target !== null ? target : 'N/A');
-    }
-
-    if(canvasId === 'criticalChartAcc'){
-        if(criticalChartAcc){ criticalChartAcc.destroy(); }
-    } else if(canvasId === 'criticalChartBoiler'){
-        if(criticalChartBoiler){ criticalChartBoiler.destroy(); }
-    } else if(canvasId === 'criticalChartPcp'){
-        if(criticalChartPcp){ criticalChartPcp.destroy(); }
-    }
-
-    const targetLineData = target !== null ? labels.map(() => target) : [];
-
-    const newChart = new Chart(
-        document.getElementById(canvasId),
-        {
-            data:{
-                labels: labels,
-                datasets:[
-                    {
-                        type:'bar',
-                        label: seriesLabel + ' - Daily',
-                        data: values,
-                        backgroundColor: barColor,
-                        borderRadius: 4,
-                        order: 2
-                    },
-                    {
-                        type:'line',
-                        label: 'Target',
-                        data: targetLineData,
-                        borderColor: '#d93025',
-                        borderWidth: 2,
-                        borderDash: [6,4],
-                        pointRadius: 0,
-                        fill: false,
-                        order: 1
-                    }
-                ]
-            },
-            options:{
-                responsive:true,
-                maintainAspectRatio:false,
-                plugins:{
-                    legend:{
-                        display:true,
-                        position:'top',
-                        labels:{ font:{ size:10 }, boxWidth:12 }
-                    }
-                },
-                scales:{
-                    y:{
-                        beginAtZero:true,
-                        ticks:{ font:{ size:10 } }
-                    },
-                    x:{
-                        ticks:{ font:{ size:10 } }
-                    }
-                }
-            }
-        }
-    );
-
-    if(canvasId === 'criticalChartAcc'){
-        criticalChartAcc = newChart;
-    } else if(canvasId === 'criticalChartBoiler'){
-        criticalChartBoiler = newChart;
-    } else if(canvasId === 'criticalChartPcp'){
-        criticalChartPcp = newChart;
-    }
-}
-
-function toggleCollapse(headerEl, bodyId){
-
-    const body = document.getElementById(bodyId);
-    const isOpen = body.classList.contains('open');
-
-    if(isOpen){
-        body.classList.remove('open');
-        headerEl.classList.remove('open');
-    } else {
-        body.classList.add('open');
-        headerEl.classList.add('open');
-
-        setTimeout(() => {
-            if(bodyId === 'critical-acc' && criticalChartAcc){ criticalChartAcc.resize(); }
-            if(bodyId === 'critical-boiler' && criticalChartBoiler){ criticalChartBoiler.resize(); }
-            if(bodyId === 'critical-pcp' && criticalChartPcp){ criticalChartPcp.resize(); }
-        }, 310);
     }
 }
 
@@ -2338,14 +1694,12 @@ loadTasks();
 loadDailyUpdates();
 loadKpiDetails();
 loadSlides();
-loadCriticalAreas();
 
 setInterval(loadDashboard, 60000);
 setInterval(loadRecentPdfs, 60000);
 setInterval(loadTasks, 60000);
 setInterval(loadDailyUpdates, 60000);
 setInterval(loadKpiDetails, 60000);
-setInterval(loadCriticalAreas, 60000);
 
 </script>
 
